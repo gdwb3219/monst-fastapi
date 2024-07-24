@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+python-jose
+pydantic
+requests
+agora_token_builder

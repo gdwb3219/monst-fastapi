@@ -14,7 +14,9 @@ origins = [
     "http://127.0.0.1:8000",
     "http://localhost:5500",
     'http://localhost:3000',
-    "http://ec2-3-107-70-86.ap-southeast-2.compute.amazonaws.com"
+    "http://ec2-3-107-70-86.ap-southeast-2.compute.amazonaws.com",
+    "https://www.api.monst-ar.com/",
+    "https://monstvideo.netlify.app"
 ]
  
 app.add_middleware(
@@ -156,15 +158,15 @@ class Timer:
             "time_left": self.time_left() if self.start_time is not None else None,
         }
  
-    # async def countdown(self, websocket: WebSocket):
-    #     try:
-    #         if self.duration is None:
-    #             raise HTTPException(status_code=400, detail="No duration set for the timer")
-    #         await asyncio.sleep(self.duration)
-    #         await websocket.send_text("Time's up! Please submit your response.")
-    #         await self.collect_responses(websocket)
-    #     except asyncio.CancelledError:
-    #         await websocket.send_text("Timer reset or cancelled")
+    async def countdown(self, websocket: WebSocket):
+        try:
+            if self.duration is None:
+                raise HTTPException(status_code=400, detail="No duration set for the timer")
+            await asyncio.sleep(self.duration)
+            await websocket.send_text("Time's up! Please submit your response.")
+            await self.collect_responses(websocket)
+        except asyncio.CancelledError:
+            await websocket.send_text("Timer reset or cancelled")
  
     # async def collect_responses(self, websocket: WebSocket):
     #     start_time = time.time()
@@ -285,6 +287,8 @@ async def websocket_timer(websocket: WebSocket):
             
             if action == "start":
                 print("ws로 start 메시지 받음", connection_id, data)
+                timer.start(duration)
+                timer.timer_task = asyncio.create_task(timer.countdown(websocket))
             elif action == 'reset':
                 print("websocket으로 reset 메시지 받음", connection_id, data)
             elif action == 'true' or action == 'false':
