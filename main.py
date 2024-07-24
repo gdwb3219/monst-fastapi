@@ -5,6 +5,7 @@ import time
 import random
 import uuid
 from pydantic import BaseModel
+from agora_token_builder import RtcTokenBuilder
  
 app = FastAPI()
  
@@ -26,6 +27,40 @@ app.add_middleware(
 
 
 responses = {}
+
+AGORA_APP_ID="5a11237b69e2452cb234a5583b8d08ff"
+AGORA_APP_CERTIFICATE="7960ab9ae087472f8c5ca45c0ec96658"
+class TokenRequest(BaseModel):
+    channelName: str
+    uid: int
+    role: str
+
+@app.post("/generate-token")
+async def generate_token(request: TokenRequest):
+    channel_name = request.channelName
+    uid = request.uid
+    role = request.role
+    print(uid)
+
+    if not channel_name:
+        raise HTTPException(status_code=400, detail="Channel name is required")
+
+    app_id = AGORA_APP_ID
+    app_certificate = AGORA_APP_CERTIFICATE
+    expiration_time_in_seconds = 3600
+    current_timestamp = int(time.time())
+    privilege_expire_timestamp = current_timestamp + expiration_time_in_seconds
+
+    if role == 'publisher':
+        role_value = 1
+    else:
+        role_value = 2
+
+    token = RtcTokenBuilder.buildTokenWithUid(
+        app_id, app_certificate, channel_name, uid, role_value, privilege_expire_timestamp
+    )
+    print(token)
+    return {"token": token}
 
 # 기존 키의 존재 여부를 확인하면서 값을 추가하는 함수
 # uuid 존재 여부 확인 후에 response 값 추가 (중복 클릭 방지)
